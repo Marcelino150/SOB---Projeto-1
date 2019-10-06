@@ -216,11 +216,14 @@ static ssize_t dev_write(struct file *filep, const char *buffer, size_t len, lof
     char *buf3 = kmalloc(MESSAGE_SIZE,GFP_KERNEL);
     char *buf4 = kmalloc(MESSAGE_SIZE,GFP_KERNEL);
 
+    char *hexiv = kmalloc(MESSAGE_SIZE,GFP_KERNEL);
+
     int i,j;
 
     char *scratchpad = NULL;
     char *ivdata = NULL;
-    unsigned char keyy[16];
+    char *originaliv = NULL;
+    //unsigned char keyy[16];
    
    skcipher = crypto_alloc_skcipher("cbc-aes-aesni", 0, 0);
    if (IS_ERR(skcipher)) {
@@ -240,8 +243,8 @@ static ssize_t dev_write(struct file *filep, const char *buffer, size_t len, lof
     pr_info("key:%s iv:%s\n",key,iv);
 
     //AES 256 with random key
-    get_random_bytes(&keyy, 16);
-    if (crypto_skcipher_setkey(skcipher, keyy, 16)) {
+    //get_random_bytes(&keyy, 16);
+    if (crypto_skcipher_setkey(skcipher, key, 16)) {
         pr_info("key could not be set\n");
         ret = -EAGAIN;
 	skcipher_request_free(req);
@@ -250,12 +253,27 @@ static ssize_t dev_write(struct file *filep, const char *buffer, size_t len, lof
     }
 
     ivdata = kmalloc(16, GFP_KERNEL);
-    if (!ivdata) {
+    originaliv = kmalloc(16, GFP_KERNEL);
+    if (!ivdata || !originaliv) {
         pr_info("could not allocate ivdata\n");
         skcipher_request_free(req);
         crypto_free_skcipher(skcipher);
     }
-    get_random_bytes(ivdata, 16);
+    //get_random_bytes(ivdata, 16);
+
+    *originaliv = *ivdata = *iv;
+
+    for(i=0,j=0;i<strlen(ivdata);i++,j+=2){
+	 sprintf((char*)hexiv+j,"%02X",ivdata[i]);
+    }
+
+    pr_info("1.IVDATA:%s\n",hexiv);
+
+    for(i=0,j=0;i<strlen(originaliv);i++,j+=2){
+	 sprintf((char*)hexiv+j,"%02X",originaliv[i]);
+    }
+
+    pr_info("2.ORIGINALIV:%s\n",hexiv);
 
     scratchpad = kmalloc(16, GFP_KERNEL);
     if (!scratchpad) {
@@ -263,6 +281,7 @@ static ssize_t dev_write(struct file *filep, const char *buffer, size_t len, lof
         skcipher_request_free(req);
         crypto_free_skcipher(skcipher);
 	kfree(ivdata);
+	kfree(originaliv);
     }
     get_random_bytes(scratchpad, 16);
 
@@ -283,6 +302,7 @@ static ssize_t dev_write(struct file *filep, const char *buffer, size_t len, lof
 	crypto_free_skcipher(skcipher);
     	skcipher_request_free(req);
    	kfree(ivdata);
+        kfree(originaliv);
    	kfree(buf);
    	kfree(buf1);
    	kfree(buf2);
@@ -321,6 +341,7 @@ static ssize_t dev_write(struct file *filep, const char *buffer, size_t len, lof
         crypto_free_skcipher(skcipher);
         skcipher_request_free(req);
 	kfree(ivdata);
+	kfree(originaliv);
 	return ret;							
     }
 
@@ -336,7 +357,7 @@ static ssize_t dev_write(struct file *filep, const char *buffer, size_t len, lof
     sk1.tfm = skcipher;
     sk1.req = req1;
 
-    skcipher_request_set_crypt(req1, &sk1.sg, &sk1.sf, 16, ivdata);
+    skcipher_request_set_crypt(req1, &sk1.sg, &sk1.sf, 16, originaliv);
     init_completion(&sk1.result.completion);
 
     ret = test_skcipher_encdec(&sk1, 0);
@@ -346,6 +367,7 @@ static ssize_t dev_write(struct file *filep, const char *buffer, size_t len, lof
 
 	crypto_free_skcipher(skcipher);
     	skcipher_request_free(req);
+	kfree(originaliv);
    	kfree(ivdata);
    	kfree(buf);
    	kfree(buf1);
