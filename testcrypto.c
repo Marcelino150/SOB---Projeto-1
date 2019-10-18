@@ -5,110 +5,62 @@
 #include<string.h>
 #include<unistd.h>
 
-#define BUFFER_LENGTH 256               ///< The buffer length (crude but fine)
-static char receive[BUFFER_LENGTH];     ///< The receive buffer from the LKM
+#define BUFFER_LENGTH 256               // Tamanho do buffer
+static char receive[BUFFER_LENGTH];     // Buffer para strings de resultado
 
-int cifrar(char *string);
-int decifrar(char *string);
+int encrypt(char *string);
+int decrypt(char *string);
 int hash(char *string);
+void concat(int n_arg, char *argv[], char *string);
 
 int main(int argc,char *argv[]){
 
-  int i = 1;
-  int tam_palavra = 0;
-  char operacao;
-  char stringToSend[BUFFER_LENGTH] = "";
-
-  int j;
+   char op;
+   char stringToSend[BUFFER_LENGTH] = "";
 
    if(argc < 2){
 	printf("Erro! Sem parametros\n");
 	return 0;
    }
 
-   operacao = argv[1][0];
+   op = argv[1][0]; // Pega o primeiro argumento
 
-   if(operacao == 'c' && argc > 2){
+   // Seleciona a operação
+   if(op == 'c' && argc > 2){
 
-	char string_hex[BUFFER_LENGTH];
-
-	while(i < argc){
-
-	   strcat(stringToSend + tam_palavra,argv[i]);
-
-	   if(argv[i+1] != NULL)
-	   	strcat(stringToSend + tam_palavra," ");
-
-	   tam_palavra = strlen(argv[i]) + 1;
-	   i++;
-	}
-
-	//printf("%s\n",stringToSend);
-	cifrar(stringToSend);
+        concat(argc,argv,stringToSend);
+	encrypt(stringToSend);  // Chama função de encriptação
    }
-   else if(operacao == 'd' && argc > 2){
+   else if(op == 'd' && argc > 2){
 
-	while(i < argc){
-
-	   strcat(stringToSend + tam_palavra,argv[i]);
-
-	   if(argv[i+1] != NULL)
-	   	strcat(stringToSend + tam_palavra," ");
-
-	   tam_palavra = strlen(argv[i]) + 1;
-	   i++;
-	}
-
-	decifrar(stringToSend);
+	concat(argc,argv,stringToSend);
+	decrypt(stringToSend);  // Chama função de desencriptação
    }
-   else if(operacao == 'h' && argc > 2){
-	while(i < argc){
+   else if(op == 'h' && argc > 2){
 
-	   strcat(stringToSend + tam_palavra,argv[i]);
-
-	   if(argv[i+1] != NULL)
-	   	strcat(stringToSend + tam_palavra," ");
-
-	   tam_palavra = strlen(argv[i]) + 1;
-	   i++;
-	}
-
-	hash(stringToSend);
+	concat(argc,argv,stringToSend);
+	hash(stringToSend);     // Chama função de hash (SHA1)
    }
    else{
 	printf("Erro! Comando invalido!\n");
    }
+}
 
+// Transforma os argumentos a partir do terceiro em uma string continua
+void concat(int n_arg, char *argv[], char *string){
 
-   /*int ret, fd;
-   char stringToSend[BUFFER_LENGTH];
-   printf("Starting device test code example...\n");
-   fd = open("/dev/crypto", O_RDWR);             // Open the device with read/write access
-   if (fd < 0){
-      perror("Failed to open the device...");
-      return errno;
+   int tam = 0;
+   int i = 1;
+
+   while(i < n_arg){
+	strcat(string + tam,argv[i]);
+
+	if(argv[i+1] != NULL)
+	   strcat(string + tam," ");
+
+	tam = strlen(argv[i]) + 1;
+	i++;
    }
-   printf("Type in a short string to send to the kernel module:\n");
-   scanf("%[^\n]%*c", stringToSend);                // Read in a string (with spaces)
-   printf("Writing message to the device [%s].\n", stringToSend);
-   ret = write(fd, stringToSend, strlen(stringToSend)); // Send the string to the LKM
-   if (ret < 0){
-      perror("Failed to write the message to the device.");
-      return errno;
-   }
-
-   printf("Press ENTER to read back from the device...\n");
-   getchar();
-
-   printf("Reading from the device...\n");
-   ret = read(fd, receive, BUFFER_LENGTH);        // Read the response from the LKM
-   if (ret < 0){
-      perror("Failed to read the message from the device.");
-      return errno;
-   }
-   printf("The received message is: [%s]\n", receive);
-   printf("End of the program\n");
-   return 0;*/
 }
 
 int hash(char *string){
@@ -117,13 +69,13 @@ int hash(char *string){
 
    printf("Iniciando dispositivo de criptografia...\n");
 
-   fd = open("/dev/crypto", O_RDWR); // Open the device with read/write access
+   fd = open("/dev/crypto", O_RDWR); // Abre o dispositivo
    if (fd < 0){
       perror("Falha ao iniciar o dispositivo...");
       return errno;
    }
 
-   ret = write(fd, string, strlen(string)); // Send the string to the LKM
+   ret = write(fd, string, strlen(string)); // Executa função de escrita eviando a string
    if (ret < 0){
       perror("Falha ao encriptar a mensagem.");
       return errno;
@@ -133,7 +85,7 @@ int hash(char *string){
    getchar();
 
    printf("Lendo do dispositivo...\n");
-   ret = read(fd, receive, BUFFER_LENGTH);        // Read the response from the LKM
+   ret = read(fd, receive, BUFFER_LENGTH); // Executa a função de leitura recebendo uma string
    if (ret < 0){
       perror("Falha ao ler a mensagem do dispositivo.");
       return errno;
@@ -145,7 +97,7 @@ int hash(char *string){
 
 }
 
-int cifrar(char *string){
+int encrypt(char *string){
 
    int ret, fd,i ,j;
    char string_hex[BUFFER_LENGTH];
@@ -153,7 +105,7 @@ int cifrar(char *string){
 
    printf("Iniciando dispositivo de criptografia...\n");
 
-   fd = open("/dev/crypto", O_RDWR); // Open the device with read/write access
+   fd = open("/dev/crypto", O_RDWR); // Executa função de escrita eviando a string
    if (fd < 0){
       perror("Falha ao iniciar o dispositivo...");
       return errno;
@@ -166,7 +118,7 @@ int cifrar(char *string){
    }
    
    printf("Encriptando mensagem [%s]:[%s].\n", string_aux,string_hex);
-   ret = write(fd, string, strlen(string)); // Send the string to the LKM
+   ret = write(fd, string, strlen(string)); // Executa função de escrita eviando a string
    if (ret < 0){
       perror("Falha ao encriptar a mensagem.");
       return errno;
@@ -176,7 +128,7 @@ int cifrar(char *string){
    getchar();
 
    printf("Lendo do dispositivo...\n");
-   ret = read(fd, receive, BUFFER_LENGTH);        // Read the response from the LKM
+   ret = read(fd, receive, BUFFER_LENGTH); // Executa a função de leitura recebendo uma string
    if (ret < 0){
       perror("Falha ao ler a mensagem do dispositivo.");
       return errno;
@@ -187,20 +139,20 @@ int cifrar(char *string){
    return 1;
 }
 
-int decifrar(char *string){
+int decrypt(char *string){
 
    int ret, fd,i ,j;
 
    printf("Iniciando dispositivo de criptografia...\n");
 
-   fd = open("/dev/crypto", O_RDWR); // Open the device with read/write access
+   fd = open("/dev/crypto", O_RDWR); // Executa função de escrita eviando a string
    if (fd < 0){
       perror("Falha ao iniciar o dispositivo...");
       return errno;
    }
 
    printf("Decifrando mensagem [%s].\n", string+2);
-   ret = write(fd, string, strlen(string)); // Send the string to the LKM
+   ret = write(fd, string, strlen(string)); // Executa função de escrita eviando a string
    if (ret < 0){
       perror("Falha ao decifrar a mensagem.");
       return errno;
@@ -210,7 +162,7 @@ int decifrar(char *string){
    getchar();
 
    printf("Lendo do dispositivo...\n");
-   ret = read(fd, receive, BUFFER_LENGTH);        // Read the response from the LKM
+   ret = read(fd, receive, BUFFER_LENGTH);  // Executa a função de leitura recebendo uma string
    if (ret < 0){
       perror("Falha ao ler a mensagem do dispositivo.");
       return errno;
