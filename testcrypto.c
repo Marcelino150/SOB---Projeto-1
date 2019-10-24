@@ -29,12 +29,12 @@ int main(int argc,char *argv[]){
    if(op == 'c' && argc > 2){
 
         concat(argc,argv,stringToSend);
-	encrypt(stringToSend);  // Chama função de encriptação
+	encrypt(stringToSend);  // Chama função de cifragem
    }
    else if(op == 'd' && argc > 2){
 
 	concat(argc,argv,stringToSend);
-	decrypt(stringToSend);  // Chama função de desencriptação
+	decrypt(stringToSend);  // Chama função de decifragem
    }
    else if(op == 'h' && argc > 2){
 
@@ -75,7 +75,7 @@ int hash(char *string){
       return errno;
    }
 
-   ret = write(fd, string, strlen(string)); // Executa função de escrita eviando a string
+   ret = write(fd, string, strlen(string)); // Executa função de escrita enviando a string
    if (ret < 0){
       perror("Falha ao encriptar a mensagem.");
       return errno;
@@ -105,7 +105,7 @@ int encrypt(char *string){
 
    printf("Iniciando dispositivo de criptografia...\n");
 
-   fd = open("/dev/crypto", O_RDWR); // Executa função de escrita eviando a string
+   fd = open("/dev/crypto", O_RDWR); // Executa função de escrita enviando a string
    if (fd < 0){
       perror("Falha ao iniciar o dispositivo...");
       return errno;
@@ -114,11 +114,11 @@ int encrypt(char *string){
    strcpy(string_aux,string+2);
 
    for(i=0,j=0;i<strlen(string_aux);i++,j+=2){
-     sprintf((char*)string_hex+j,"%02X",string_aux[i]);
+     sprintf((char*)string_hex+j,"%02X",string_aux[i]); // Converte a string para HEX (somente para exibição)
    }
    
    printf("Encriptando mensagem [%s]:[%s].\n", string_aux,string_hex);
-   ret = write(fd, string, strlen(string)); // Executa função de escrita eviando a string
+   ret = write(fd, string, strlen(string)); // Executa função de escrita enviando a string
    if (ret < 0){
       perror("Falha ao encriptar a mensagem.");
       return errno;
@@ -145,14 +145,14 @@ int decrypt(char *string){
 
    printf("Iniciando dispositivo de criptografia...\n");
 
-   fd = open("/dev/crypto", O_RDWR); // Executa função de escrita eviando a string
+   fd = open("/dev/crypto", O_RDWR); // Executa função de escrita enviando a string
    if (fd < 0){
       perror("Falha ao iniciar o dispositivo...");
       return errno;
    }
 
    printf("Decifrando mensagem [%s].\n", string+2);
-   ret = write(fd, string, strlen(string)); // Executa função de escrita eviando a string
+   ret = write(fd, string, strlen(string)); // Executa função de escrita enviando a string
    if (ret < 0){
       perror("Falha ao decifrar a mensagem.");
       return errno;
