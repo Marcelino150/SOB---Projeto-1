@@ -15,10 +15,10 @@
 #define  MESSAGE_SIZE 256
 
 MODULE_LICENSE("GPL");                      // Tipo de licença
-MODULE_DESCRIPTION("Crypto Device");        // Descrição do módule
+MODULE_DESCRIPTION("Crypto Device");        // Descrição do módulo
 
 static int    majorNumber;                  // Armazena o número do dispositivo
-static char   message[MESSAGE_SIZE] = {0};  // Memória para armazenar mensagem enviada ao usuário
+static char   message[MESSAGE_SIZE] = {0};  // Buffer para armazenar mensagem enviada ao usuário
 static short  size_of_message;              // Tamanho da mensagem a ser enviada ao usuário
 static int    numberOpens = 0;              // Número de vezes em que o dispositivo foi aberto
 static struct class*  cryptoClass  = NULL;  // Ponteiro de classe do dispositivo
@@ -80,7 +80,7 @@ static int __init crypto_init(void){
    }
    printk(KERN_INFO "CRYPTO: Dispositivo registrado com o número %d\n", majorNumber);
 
-   // Resgistra a classe do dispositivo
+   // Registra a classe do dispositivo
    cryptoClass = class_create(THIS_MODULE, CLASS_NAME);
    if (IS_ERR(cryptoClass)){                
       unregister_chrdev(majorNumber, DEVICE_NAME);
@@ -142,7 +142,7 @@ static void __exit crypto_exit(void){
    class_destroy(cryptoClass);                       // Remove o registro da classe
    unregister_chrdev(majorNumber, DEVICE_NAME);      // Cancela o registro do número do dispositivo
 
-   mutex_unlock(&mtx);             // Destrava mutex
+   mutex_unlock(&mtx); // Destrava mutex
 
    printk(KERN_INFO "CRYPTO: Dispositivo removido!\n");
 }
@@ -176,7 +176,7 @@ static unsigned int encrypt(const char *string){
    struct skcipher_request *request = NULL;
    int ret = -EFAULT;
    int i,j;
-   int cipherlen;              // Tam da mensagem a ser cifrada (multiplo de 16)
+   int cipherlen;              // Tamanho da mensagem a ser cifrada (multiplo de 16)
 
    char *plaintext = NULL;     // Buffer para a mensagem a ser cifrada 
    char *ciphertext = NULL;    // Buffer para a mensagem cifrada
@@ -214,7 +214,7 @@ static unsigned int encrypt(const char *string){
    }
    printk(KERN_INFO "CRYPTO: Key setada: %s\n",key);
 
-   //Aloca buffer para vetor de inicialização
+   // Aloca buffer para vetor de inicialização
    ivdata = kmalloc(16, GFP_KERNEL);
    if (!ivdata ){
 	pr_info("ivdata nao pode ser alocado\n");
